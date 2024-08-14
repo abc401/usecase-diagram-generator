@@ -14,11 +14,16 @@ export class Vec2 {
     this.y = y;
   }
 
+  static Zero() {
+    return new Vec2(0, 0);
+  }
+
   /** @param {Vec2} that */
   sub(that) {
     return new Vec2(this.x - that.x, this.y - that.y);
   }
 
+  /** @param {Vec2} that */
   add(that) {
     return new Vec2(this.x + that.x, this.y + that.y);
   }

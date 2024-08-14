@@ -3,6 +3,7 @@ init();
 
 import { makeSpace, makeSpaceSingle } from "./spacing.js";
 import { UseCase } from "./usecase.js";
+import { Vec2 } from "./vec2.js";
 
 const USER = "user";
 const ADMIN = "admin";
@@ -33,8 +34,18 @@ function drawUseCases() {
   }
 }
 
-makeSpace(useCases);
+// makeSpace(useCases);
 
 setInterval(() => {
   drawUseCases();
 }, 1000 / 60);
+
+document.addEventListener("click", () => {
+  for (const useCase of useCases) {
+    useCase.applyForceOn(useCases);
+  }
+  for (const useCase of useCases) {
+    useCase.pos = useCase.pos.add(useCase.forceAppliedOnSelf);
+    useCase.forceAppliedOnSelf = Vec2.Zero();
+  }
+});

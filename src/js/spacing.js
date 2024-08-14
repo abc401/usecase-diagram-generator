@@ -2,12 +2,6 @@ import { UseCase } from "./usecase.js";
 
 /** @param {UseCase[]} useCases */
 export function makeSpace(useCases) {
-  for (const useCase of useCases) {
-    if (useCase.dimensions == null) {
-      useCase.measure();
-    }
-  }
-
   for (const useCase1 of useCases) {
     for (const useCase2 of useCases) {
       if (useCase1 === useCase2) {
@@ -32,12 +26,6 @@ export function makeSpace(useCases) {
  * @param {UseCase[]} useCases
  */
 export function makeSpaceSingle(useCase1, useCases) {
-  for (const useCase2 of useCases) {
-    if (useCase2.dimensions == null) {
-      useCase2.measure();
-    }
-  }
-
   for (const useCase2 of useCases) {
     if (useCase1 === useCase2) {
       continue;
