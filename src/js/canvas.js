@@ -5,8 +5,10 @@ export let canvas;
 export let ctx;
 
 export function init() {
-  canvas = document.getElementById("main-canvas");
-  if (canvas == null) {
+  const _canvas = document.getElementById("main-canvas");
+  if (_canvas instanceof HTMLCanvasElement) {
+    canvas = _canvas;
+  } else {
     throw Error();
   }
   ctx = canvas.getContext("2d");

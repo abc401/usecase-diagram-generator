@@ -1,8 +1,8 @@
-import { init } from "./canvas";
+import { canvas, ctx, init } from "./canvas.js";
 init();
 
-import { ctx } from "./canvas";
-import { UseCase } from "./usecase";
+import { makeSpace, makeSpaceSingle } from "./spacing.js";
+import { UseCase } from "./usecase.js";
 
 const USER = "user";
 const ADMIN = "admin";
@@ -23,34 +23,18 @@ const actorToUseCase = new Map([
   [DB, DEF],
 ]);
 
-/**
- * @param {string} useCaseName
- * @param {number} x
- * @param {number} y
- */
-function drawUseCase(useCaseName, x, y) {
-  const padding = 20;
-  const measurement = ctx.measureText(useCaseName);
-  const height =
-    Math.abs(measurement.actualBoundingBoxAscent) +
-    Math.abs(measurement.actualBoundingBoxDescent);
-  const width = measurement.width;
-  const radius = Math.max(width, height) + padding;
-
-  ctx.beginPath();
-  ctx.ellipse(x, y, radius, radius, 0, 0, 2 * Math.PI);
-  ctx.stroke();
-  ctx.fillText(useCaseName, x - width / 2, y + height / 2);
-
-  return { size: radius };
-}
-
 function drawUseCases() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   let x = 0;
-  for (let usecase of useCases) {
-    const measurement = drawUseCase(usecase, x, 100);
-    x += measurement.size * 2;
+  for (const useCase of useCases) {
+    useCase.draw();
+    const measurement = useCase.dimensions;
+    x += measurement.radius * 2;
   }
 }
 
-drawUseCases();
+makeSpace(useCases);
+
+setInterval(() => {
+  drawUseCases();
+}, 1000 / 60);
