@@ -5,6 +5,7 @@ let y = 200;
 
 export class UseCase {
   static PADDING = 20;
+  static PADDING_THRESHOLD = 5;
 
   /** @type {string} */
   name;
@@ -21,13 +22,13 @@ export class UseCase {
    */
   dimensions;
 
+  forceAppliedOnSelf = Vec2.Zero();
+
   /** @type {UseCase[]} */
   includes = [];
 
   /** @type {UseCase[]} */
   extends = [];
-
-  forceAppliedOnSelf = Vec2.Zero();
 
   focused = false;
 
@@ -35,6 +36,7 @@ export class UseCase {
   constructor(name) {
     this.name = name;
     this.pos = new Vec2(x, y);
+
     y += 100;
 
     const measurement = ctx.measureText(this.name);
@@ -49,32 +51,62 @@ export class UseCase {
       textWidth: width,
       textHeight: height,
     };
+
+    useCases.push(this);
   }
 
   /** @param {UseCase[]} useCases */
-  applyForceOn(useCases) {
+  setIncludes(...useCases) {
     for (const useCase of useCases) {
-      if (useCase === this) {
-        continue;
-      }
-
-      const delta = useCase.pos.sub(this.pos);
-
-      const desiredDistance = this.desiredMinDistanceFor(useCase);
-      if (delta.mag() < desiredDistance) {
-        useCase.forceAppliedOnSelf = useCase.forceAppliedOnSelf.add(
-          delta.norm().scalarMul(desiredDistance - delta.mag()),
-        );
+      if (useCase === this || useCase.doesInclude(this)) {
+        throw Error();
       }
     }
+    this.includes = useCases;
   }
 
   /** @param {UseCase} useCase */
-  desiredMinDistanceFor(useCase) {
-    return UseCase.PADDING + this.dimensions.radius + useCase.dimensions.radius;
+  doesInclude(useCase) {
+    for (const includedUseCase of this.includes) {
+      if (includedUseCase === useCase) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** @param {Vec2} force */
+  applyForceOnSelf(force) {
+    this.forceAppliedOnSelf = this.forceAppliedOnSelf.add(force.filterNaN());
+  }
+
+  finalizeForceApplied() {
+    this.pos = this.pos.add(this.forceAppliedOnSelf);
+    this.forceAppliedOnSelf = Vec2.Zero();
   }
 
   draw() {
+    ctx.strokeStyle = "black";
+    ctx.fillStyle = "black";
+    for (const includedUseCase of this.includes) {
+      ctx.beginPath();
+      ctx.moveTo(this.pos.x, this.pos.y);
+      ctx.lineTo(includedUseCase.pos.x, includedUseCase.pos.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(
+        includedUseCase.pos.x,
+        includedUseCase.pos.y,
+        5,
+        5,
+        0,
+        0,
+        2 * Math.PI,
+      );
+      ctx.fill();
+    }
+
     if (this.focused) {
       ctx.strokeStyle = "red";
       ctx.fillStyle = "red";
@@ -101,3 +133,6 @@ export class UseCase {
     );
   }
 }
+
+/** @type {UseCase[]} */
+export const useCases = [];

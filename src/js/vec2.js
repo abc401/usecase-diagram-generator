@@ -18,6 +18,14 @@ export class Vec2 {
     return new Vec2(0, 0);
   }
 
+  clone() {
+    return new Vec2(this.x, this.y);
+  }
+
+  neg() {
+    return new Vec2(-this.x, -this.y);
+  }
+
   /** @param {Vec2} that */
   sub(that) {
     return new Vec2(this.x - that.x, this.y - that.y);
@@ -34,7 +42,17 @@ export class Vec2 {
 
   norm() {
     const mag = this.mag();
+    if (mag === 0) {
+      console.log("magnitude is zero");
+    }
     return new Vec2(this.x / mag, this.y / mag);
+  }
+
+  filterNaN() {
+    return new Vec2(
+      Number.isNaN(this.x) ? 0 : this.x,
+      Number.isNaN(this.y) ? 0 : this.y,
+    );
   }
 
   /** @param {number} scalar */
@@ -45,5 +63,10 @@ export class Vec2 {
   /** @param {number} scalar */
   scalarMul(scalar) {
     return new Vec2(this.x * scalar, this.y * scalar);
+  }
+
+  /** @param {number} scalar */
+  scalarDiv(scalar) {
+    return new Vec2(this.x / scalar, this.y / scalar);
   }
 }

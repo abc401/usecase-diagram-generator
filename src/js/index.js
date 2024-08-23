@@ -1,51 +1,56 @@
-import { canvas, ctx, init } from "./canvas.js";
-init();
+import { canvas, ctx } from "./canvas.js";
 
-import { makeSpace, makeSpaceSingle } from "./spacing.js";
-import { UseCase } from "./usecase.js";
-import { Vec2 } from "./vec2.js";
+import { useCases, UseCase } from "./usecase.js";
 
-const USER = "user";
-const ADMIN = "admin";
-const DB = "db";
+function init() {
+  const login = new UseCase("login");
+  const signup = new UseCase("signup");
+  const abc = new UseCase("abcghijkl");
+  const def = new UseCase("defghklmnopqr");
+  login.setIncludes(abc, def);
+}
 
-const LOGIN = new UseCase("login");
-const SIGNUP = new UseCase("signup");
-const ABC = new UseCase("abcghijkl");
-const DEF = new UseCase("defghklmnopqr");
+function update() {
+  for (const useCase1 of useCases) {
+    for (const useCase2 of useCase1.includes) {
+      const posDelta = useCase2.pos.sub(useCase1.pos);
+      const deltaMag = posDelta.mag();
+      if (useCase1.doesInclude(useCase2)) {
+        const minAcceptableDistance =
+          useCase1.dimensions.radius +
+          useCase2.dimensions.radius +
+          UseCase.PADDING;
 
-const useCases = [LOGIN, SIGNUP, ABC, DEF];
-const actors = [USER, ADMIN, DB];
-const actorToUseCase = new Map([
-  [USER, LOGIN],
-  [USER, SIGNUP],
-  [ADMIN, SIGNUP],
-  [DB, ABC],
-  [DB, DEF],
-]);
+        const maxAcceptableDistance =
+          minAcceptableDistance + UseCase.PADDING_THRESHOLD;
 
-function drawUseCases() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  let x = 0;
+        const velocity = posDelta.norm().scalarMul(2);
+        if (deltaMag < minAcceptableDistance) {
+          // Separate the two use cases
+          useCase1.applyForceOnSelf(velocity.neg());
+          useCase2.applyForceOnSelf(velocity);
+        } else if (deltaMag > maxAcceptableDistance) {
+          // Bring the two together
+          useCase1.applyForceOnSelf(velocity);
+          useCase2.applyForceOnSelf(velocity.neg());
+        }
+      }
+    }
+  }
   for (const useCase of useCases) {
-    useCase.draw();
-    const measurement = useCase.dimensions;
-    x += measurement.radius * 2;
+    useCase.finalizeForceApplied();
   }
 }
 
-// makeSpace(useCases);
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (const useCase of useCases) {
+    useCase.draw();
+  }
+}
 
+init();
 setInterval(() => {
-  drawUseCases();
+  update();
+  draw();
 }, 1000 / 60);
-
-document.addEventListener("click", () => {
-  for (const useCase of useCases) {
-    useCase.applyForceOn(useCases);
-  }
-  for (const useCase of useCases) {
-    useCase.pos = useCase.pos.add(useCase.forceAppliedOnSelf);
-    useCase.forceAppliedOnSelf = Vec2.Zero();
-  }
-});
