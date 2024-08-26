@@ -1,56 +1,48 @@
-import { canvas, ctx } from "./canvas.js";
+const adjList = {
+  1: [],
+  2: [1],
+  3: [1, 5],
+  4: [5],
+  5: [2],
+  6: [4, 2],
+};
 
-import { useCases, UseCase } from "./usecase.js";
+const roots = [3, 6];
 
-function init() {
-  const login = new UseCase("login");
-  const signup = new UseCase("signup");
-  const abc = new UseCase("abcghijkl");
-  const def = new UseCase("defghklmnopqr");
-  login.setIncludes(abc, def);
-}
-
-function update() {
-  for (const useCase1 of useCases) {
-    for (const useCase2 of useCase1.includes) {
-      const posDelta = useCase2.pos.sub(useCase1.pos);
-      const deltaMag = posDelta.mag();
-      if (useCase1.doesInclude(useCase2)) {
-        const minAcceptableDistance =
-          useCase1.dimensions.radius +
-          useCase2.dimensions.radius +
-          UseCase.PADDING;
-
-        const maxAcceptableDistance =
-          minAcceptableDistance + UseCase.PADDING_THRESHOLD;
-
-        const velocity = posDelta.norm().scalarMul(2);
-        if (deltaMag < minAcceptableDistance) {
-          // Separate the two use cases
-          useCase1.applyForceOnSelf(velocity.neg());
-          useCase2.applyForceOnSelf(velocity);
-        } else if (deltaMag > maxAcceptableDistance) {
-          // Bring the two together
-          useCase1.applyForceOnSelf(velocity);
-          useCase2.applyForceOnSelf(velocity.neg());
-        }
-      }
+/**
+ * @param {number} vertex
+ * @param {{ [key: number]: number[] }} adjList
+ * @param {Map<number, boolean>} visitRecord
+ * @param {number[]} ordering
+ */
+function topologicalSortAux(vertex, adjList, visitRecord, ordering) {
+  visitRecord[vertex] = true;
+  for (const neighbor of adjList[vertex]) {
+    if (!visitRecord[neighbor]) {
+      topologicalSortAux(neighbor, adjList, visitRecord, ordering);
     }
   }
-  for (const useCase of useCases) {
-    useCase.finalizeForceApplied();
-  }
+  ordering.push(vertex);
 }
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const useCase of useCases) {
-    useCase.draw();
+/**
+ * @param {{ [key: number]: number[] }} adjList
+ * @param {number[]} roots
+ * @returns A list containing all the vertices of `ajdList` in reverse
+ *   topological ordering .i.e. The last element of the list is the first
+ *   element of the topological ordering
+ */
+function topologicalSort(adjList, roots) {
+  /** @type {Map<number, boolean>} */
+  const visitRecord = new Map();
+
+  /** @type {number[]} */
+  const ordering = [];
+
+  for (const vertex of roots) {
+    topologicalSortAux(vertex, adjList, visitRecord, ordering);
   }
+  return ordering;
 }
 
-init();
-setInterval(() => {
-  update();
-  draw();
-}, 1000 / 60);
+console.log(topologicalSort(adjList, roots));
