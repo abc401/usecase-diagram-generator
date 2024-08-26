@@ -45,4 +45,31 @@ function topologicalSort(adjList, roots) {
   return ordering;
 }
 
-console.log(topologicalSort(adjList, roots));
+/**
+ * @param {{ [key: number]: number[] }} adjList
+ * @param {number[]} roots
+ */
+function assignLayersLongestPath(adjList, roots) {
+  const topOrder = topologicalSort(adjList, roots);
+  /** @type {Map<number, number>} */
+  const distanceTo = new Map();
+  for (const root of roots) {
+    distanceTo.set(root, 0);
+  }
+
+  while (topOrder.length > 0) {
+    const current = topOrder.pop();
+    for (const neighbor of adjList[current]) {
+      const currentDist = distanceTo.get(current);
+      const distanceToNeighbor = distanceTo.get(neighbor);
+      if (distanceToNeighbor == null) {
+        distanceTo.set(neighbor, currentDist + 1);
+      } else if (distanceToNeighbor < distanceTo.get(current) + 1) {
+        distanceTo.set(neighbor, currentDist + 1);
+      }
+    }
+  }
+  return distanceTo;
+}
+
+console.log(assignLayersLongestPath(adjList, roots));
