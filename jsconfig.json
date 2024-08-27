@@ -2,6 +2,7 @@
     "compilerOptions": {
         "module": "ES2015",
         "checkJs": true,
-        "lib": ["ES6", "DOM"]
+        "lib": ["ES6", "DOM"],
+        "target": "es2015"
     },
 }

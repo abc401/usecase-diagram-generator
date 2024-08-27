@@ -1,4 +1,4 @@
-const adjList = {
+const adjLists = {
   1: [],
   2: [1],
   3: [1, 5],
@@ -72,4 +72,56 @@ function assignLayersLongestPath(adjList, roots) {
   return distanceTo;
 }
 
-console.log(assignLayersLongestPath(adjList, roots));
+/**
+ * @param {{ [key: number]: number[] }} adjLists
+ * @param {number[]} roots
+ */
+function sugiyamaGraphLayout(adjLists, roots) {
+  const layerAssignments = assignLayersLongestPath(adjLists, roots);
+
+  /** @type {number[][]} */
+  const layers = [];
+  for (const [vertex, layerIdx] of layerAssignments) {
+    if (layers[layerIdx] == null) {
+      layers[layerIdx] = [];
+    }
+    layers[layerIdx].push(vertex);
+  }
+
+  let currentDummyVertex = -1;
+  for (
+    let currentLayerIdx = 0;
+    currentLayerIdx < layers.length;
+    currentLayerIdx++
+  ) {
+    const layer = layers[currentLayerIdx];
+    for (const vertex of layer) {
+      const newAdjList = [];
+      for (const neighbor of adjLists[vertex]) {
+        const neighborLayer = layerAssignments.get(neighbor);
+        if (neighborLayer == null) {
+          throw Error();
+        }
+        if (neighborLayer > currentLayerIdx + 1) {
+          adjLists[currentDummyVertex] = [neighbor];
+          newAdjList.push(currentDummyVertex);
+          layers[currentLayerIdx + 1].push(currentDummyVertex);
+          currentDummyVertex -= 1;
+        }
+        if (neighborLayer === currentLayerIdx + 1) {
+          newAdjList.push(neighbor);
+        }
+        if (neighborLayer < currentLayerIdx + 1) {
+          console.log("adjLists: ", adjLists);
+          console.log("layers: ", layers);
+          throw Error();
+        }
+      }
+      adjLists[vertex] = newAdjList;
+    }
+  }
+  console.log("adjLists: ", adjLists);
+  return layers;
+}
+
+console.log(sugiyamaGraphLayout(adjLists, roots));
