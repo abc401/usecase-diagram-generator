@@ -4,6 +4,10 @@ export class Vec2 {
     readonly y: number,
   ) {}
 
+  static Zero() {
+    return new Vec2(0, 0);
+  }
+
   clone() {
     return new Vec2(this.x, this.y);
   }

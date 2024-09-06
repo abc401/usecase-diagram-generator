@@ -1,12 +1,16 @@
 import { ctx } from "./canvas";
 import { Vec2 } from "./math";
 
-export const UNIT = 200;
+export const UNIT_X = 200;
+export const UNIT_Y = 150;
 export const VERT_PADDING = 20;
-export const GRAPH_OFFSET = 100;
+export const GRAPH_OFFSET_X = 300;
+export const GRAPH_OFFSET_Y = 90;
+export const VERTEX_FONT = "bold 20px monospace";
 
 export type VertexID = number;
 export type AdjList = Map<VertexID, VertexID[]>;
+export type Layer = Array<Vertex | undefined>;
 
 export interface LayeredVertIndices {
   layerIdx: number;
@@ -21,13 +25,14 @@ export interface VertexDimensions {
 export class Vertex {
   private dim: VertexDimensions;
   neighbors: Vertex[] = [];
+  reverseNeighbors: Vertex[] = [];
 
   constructor(
     readonly id: VertexID,
     private text: string,
     public indices: LayeredVertIndices,
   ) {
-    ctx.font = "bold 48px monospace";
+    ctx.font = VERTEX_FONT;
     const measurement = ctx.measureText(text);
     const textSize = new Vec2(
       Math.abs(measurement.actualBoundingBoxLeft) +
@@ -45,8 +50,8 @@ export class Vertex {
 
   getPos() {
     return new Vec2(
-      this.indices.layerIdx * UNIT + GRAPH_OFFSET,
-      this.indices.vertexIdx * UNIT + GRAPH_OFFSET,
+      this.indices.layerIdx * UNIT_X + GRAPH_OFFSET_X,
+      this.indices.vertexIdx * UNIT_Y + GRAPH_OFFSET_Y,
     );
   }
 
@@ -63,10 +68,11 @@ export class Vertex {
   getTextSize() {
     return this.dim.textSize.clone();
   }
-
-  draw() {
+  drawDebug() {
     const pos = this.getPos();
     const dim = this.dim;
+
+    ctx.font = VERTEX_FONT;
     ctx.beginPath();
     ctx.ellipse(pos.x, pos.y, dim.radius, dim.radius, 0, 0, 2 * Math.PI);
     ctx.stroke();
@@ -75,6 +81,47 @@ export class Vertex {
       pos.x - this.dim.textSize.x / 2,
       pos.y + dim.textSize.y / 2,
     );
+  }
+
+  draw() {
+    if (this.id <= 0) {
+      return;
+    }
+
+    const pos = this.getPos();
+    const dim = this.dim;
+
+    ctx.font = VERTEX_FONT;
+    ctx.beginPath();
+    ctx.ellipse(pos.x, pos.y, dim.radius, dim.radius, 0, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.fillText(
+      this.text,
+      pos.x - this.dim.textSize.x / 2,
+      pos.y + dim.textSize.y / 2,
+    );
+  }
+
+  drawEdgesDebug() {
+    const dim = this.dim;
+    const pos = this.getPos();
+
+    for (const neighbor of this.neighbors) {
+      const neighborPos = neighbor.getPos();
+      const neighborDim = neighbor.getDim();
+
+      const edgeDirection = neighborPos.sub(pos).norm();
+      const p1 = pos.add(edgeDirection.scalarMul(dim.radius));
+      const p2 = neighborPos.sub(edgeDirection.scalarMul(neighborDim.radius));
+
+      ctx.strokeStyle = "black";
+      ctx.fillStyle = "black";
+
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+    }
   }
 
   drawEdges() {
@@ -86,8 +133,19 @@ export class Vertex {
       const neighborDim = neighbor.getDim();
 
       const edgeDirection = neighborPos.sub(pos).norm();
-      const p1 = pos.add(edgeDirection.scalarMul(dim.radius));
-      const p2 = neighborPos.sub(edgeDirection.scalarMul(neighborDim.radius));
+
+      let p1 = Vec2.Zero();
+      let p2 = Vec2.Zero();
+      if (this.id <= 0) {
+        p1 = pos.clone();
+      } else {
+        p1 = pos.add(edgeDirection.scalarMul(dim.radius));
+      }
+      if (neighbor.id <= 0) {
+        p2 = neighborPos.clone();
+      } else {
+        p2 = neighborPos.sub(edgeDirection.scalarMul(neighborDim.radius));
+      }
 
       ctx.strokeStyle = "black";
       ctx.fillStyle = "black";

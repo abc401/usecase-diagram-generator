@@ -11,3 +11,11 @@ if (_ctx == null) {
 }
 
 export const ctx = _ctx;
+
+const observer = new ResizeObserver((entries) => {
+  for (const entry of entries) {
+    canvas.width = entry.contentRect.width;
+    canvas.height = entry.contentRect.height;
+  }
+});
+observer.observe(canvas);

@@ -1,14 +1,5 @@
-import { ctx } from "./canvas";
-import { Vec2 } from "./math";
-import {
-  Vertex,
-  VertexID,
-  AdjList,
-  VertexDimensions,
-  VERT_PADDING,
-  GRAPH_OFFSET,
-  UNIT,
-} from "./graph";
+import { Vertex, VertexID, AdjList, Layer } from "./graph";
+import { ctx, canvas } from "./canvas";
 
 function reverseTopSortAux(
   vertex: VertexID,
@@ -103,6 +94,7 @@ function createLayers(
   ) {
     const layer = layers[currentLayerIdx];
     for (const vertex of layer) {
+      const newNeighbors: Vertex[] = [];
       const neighborIDs = adjList.get(vertex.id);
 
       if (neighborIDs == null) {
@@ -129,30 +121,69 @@ function createLayers(
           adjList.set(dummyVertex.id, [neighborVertex.id]);
           dummyVertex.neighbors.push(neighborVertex);
 
-          vertex.neighbors.push(dummyVertex);
+          newNeighbors.push(dummyVertex);
           desiredNeighborLayer.push(dummyVertex);
           // layerAssignments.set(currDummyVertexID, currentLayerIdx + 1);
           currDummyVertexID -= 1;
         } else if (
           neighborVertex.indices.layerIdx === desiredNeighborLayerIdx
         ) {
-          vertex.neighbors.push(neighborVertex);
+          newNeighbors.push(neighborVertex);
         } else {
           console.log("adjList: ", adjList);
           console.log("layers: ", layers);
           throw Error();
         }
       }
+      vertex.neighbors = newNeighbors;
       // adjList.set(vertex, newNeighbors);
+    }
+  }
+
+  for (const layer of layers) {
+    for (const vertex of layer) {
+      for (const neighbor of vertex.neighbors) {
+        neighbor.reverseNeighbors.push(vertex);
+      }
     }
   }
   return layers;
 }
 
+function baryCenterHeuristic(vertex: Vertex, layer: Layer) {
+  let sumOfNeighborIdx = 0;
+  let nNeighbors = vertex.neighbors.length + vertex.reverseNeighbors.length;
+
+  for (const neighbor of vertex.neighbors) {
+    sumOfNeighborIdx += neighbor.indices.vertexIdx;
+  }
+  for (const neighbor of vertex.reverseNeighbors) {
+    sumOfNeighborIdx += neighbor.indices.vertexIdx;
+  }
+
+  if (nNeighbors == 0) {
+    return;
+  }
+
+  const avgVertexIdx = Math.round(sumOfNeighborIdx / nNeighbors);
+  const tmp = layer[avgVertexIdx];
+  if (tmp == null) {
+    layer[vertex.indices.vertexIdx] = undefined;
+    layer[avgVertexIdx] = vertex;
+    vertex.indices.vertexIdx = avgVertexIdx;
+  } else {
+    layer[avgVertexIdx] = layer[vertex.indices.vertexIdx];
+    layer[vertex.indices.vertexIdx] = tmp;
+
+    tmp.indices.vertexIdx = vertex.indices.vertexIdx;
+    vertex.indices.vertexIdx = avgVertexIdx;
+  }
+}
+
 function sugiyamaGraphLayout(
   adjList: AdjList,
   roots: VertexID[],
-): [Vertex[][], Map<VertexID, number>] {
+): [Layer[], Map<VertexID, number>] {
   const layerAssignments = assignLayersLongestPath(adjList, roots);
 
   console.log("layer Assignments: ", layerAssignments);
@@ -160,19 +191,22 @@ function sugiyamaGraphLayout(
   return [layers, layerAssignments];
 }
 
-function drawGraph(
-  layers: Vertex[][],
-  adjList: AdjList,
-  layerAssignments: Map<VertexID, number>,
-) {
+function drawGraph(layers: Layer[]) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   for (const currLayer of layers) {
     for (const vertex of currLayer) {
+      if (vertex == null) {
+        continue;
+      }
       vertex.draw();
     }
   }
 
   for (const currLayer of layers) {
     for (const vertex of currLayer) {
+      if (vertex == null) {
+        continue;
+      }
       vertex.drawEdges();
     }
   }
@@ -191,7 +225,18 @@ function main() {
   const roots: VertexID[] = [3, 6];
   const [layers, layerAssignment] = sugiyamaGraphLayout(adjList, roots);
 
-  drawGraph(layers, adjList, layerAssignment);
+  document.addEventListener("keypress", () => {
+    drawGraph(layers);
+    for (const layer of layers) {
+      for (const vertex of layer) {
+        if (vertex == null) {
+          continue;
+        }
+        console.log("barycenter vertex: ", vertex.id);
+        baryCenterHeuristic(vertex, layer);
+      }
+    }
+  });
   console.log("layers: ", layers);
   console.log("layer Assignment: ", layerAssignment);
   console.log("adjList: ", adjList);
