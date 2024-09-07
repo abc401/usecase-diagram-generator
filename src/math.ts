@@ -8,6 +8,14 @@ export class Vec2 {
     return new Vec2(0, 0);
   }
 
+  rotate(amountRadians: number, origin: Vec2) {
+    // x2=cosβx1−sinβy1
+    // y2=sinβx1+cosβy1
+    const cos = Math.cos(amountRadians);
+    const sin = Math.sin(amountRadians);
+    return new Vec2(cos * this.x - sin * this.y, sin * this.x + cos * this.y);
+  }
+
   clone() {
     return new Vec2(this.x, this.y);
   }

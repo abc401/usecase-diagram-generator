@@ -5,7 +5,7 @@ export const UNIT_X = 200;
 export const UNIT_Y = 150;
 export const VERT_PADDING = 20;
 export const GRAPH_OFFSET_X = 300;
-export const GRAPH_OFFSET_Y = 90;
+export const GRAPH_OFFSET_Y = 85;
 export const VERTEX_FONT = "bold 20px monospace";
 
 export type VertexID = number;
@@ -20,6 +20,34 @@ export interface LayeredVertIndices {
 export interface VertexDimensions {
   textSize: Vec2;
   radius: number;
+}
+
+function drawArrow(start: Vec2, end: Vec2) {
+  const delta = end.sub(start);
+  const arrowLength = delta.mag();
+  const norm = delta.norm().scalarMul(10);
+  const leftWingStart = end.sub(norm.rotate(Math.PI / 6, end));
+  const rightWingStart = end.sub(norm.rotate(-Math.PI / 6, end));
+
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(start.x, start.y);
+  ctx.lineTo(end.x, end.y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(leftWingStart.x, leftWingStart.y);
+  ctx.lineTo(end.x, end.y);
+  ctx.lineTo(rightWingStart.x, rightWingStart.y);
+  ctx.closePath();
+  ctx.fill();
+  // ctx.lineTo(end.x, end.y);
+}
+
+function drawLine(start: Vec2, end: Vec2) {
+  ctx.beginPath();
+  ctx.moveTo(start.x, start.y);
+  ctx.lineTo(end.x, end.y);
+  ctx.stroke();
 }
 
 export class Vertex {
@@ -117,10 +145,7 @@ export class Vertex {
       ctx.strokeStyle = "black";
       ctx.fillStyle = "black";
 
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.stroke();
+      drawArrow(p1, p2);
     }
   }
 
@@ -150,10 +175,11 @@ export class Vertex {
       ctx.strokeStyle = "black";
       ctx.fillStyle = "black";
 
-      ctx.beginPath();
-      ctx.moveTo(p1.x, p1.y);
-      ctx.lineTo(p2.x, p2.y);
-      ctx.stroke();
+      if (neighbor.id <= 0) {
+        drawLine(p1, p2);
+      } else {
+        drawArrow(p1, p2);
+      }
     }
   }
 }
